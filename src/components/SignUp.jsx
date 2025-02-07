@@ -1,35 +1,46 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "./context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { signupSuccess, signupFailure } from "../authSlice/auth";
+
 function SignUp() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
     const navigate = useNavigate();
-    const { register } = useAuth();
+    const dispatch = useDispatch();
+    const { error } = useSelector((state) => state.auth);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
 
         if (!email || !password || !confirmPassword) {
-            setError("All fields are required");
+            dispatch(signupFailure("All fields are required"));
             return;
         }
 
         if (password !== confirmPassword) {
-            setError("Password does not match");
+            dispatch(signupFailure("Passwords do not match"));
             return;
         }
 
-        try {
-            await register(email, password);
-            navigate("/counter");
-        } catch (error) {
-            setError(error.message);
+        const savedUsers = JSON.parse(localStorage.getItem("users")) || [];
+        const userExists = savedUsers.find((u) => u.email === email);
+        if (userExists) {
+            dispatch(signupFailure("User already exists"));
+            return;
         }
+
+        const newUser = { id: Date.now(), email, password };
+        const updatedUsers = [...savedUsers, newUser];
+        localStorage.setItem("users", JSON.stringify(updatedUsers));
+
+        const userWithoutPassword = { id: newUser.id, email: newUser.email };
+        dispatch(signupSuccess(userWithoutPassword));
+        localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+        navigate("/counter");
     };
+
     return (
         <>
             <div>
@@ -37,9 +48,7 @@ function SignUp() {
                 {error && <p>{error}</p>}
                 <form onSubmit={handleSubmit}>
                     <div>
-                        <label htmlFor="email">
-                            Email
-                        </label>
+                        <label htmlFor="email">Email</label>
                         <input
                             id="email"
                             name="email"
@@ -50,9 +59,7 @@ function SignUp() {
                         />
                     </div>
                     <div>
-                        <label htmlFor="password">
-                            Password
-                        </label>
+                        <label htmlFor="password">Password</label>
                         <input
                             id="password"
                             name="password"
@@ -63,9 +70,7 @@ function SignUp() {
                         />
                     </div>
                     <div>
-                        <label htmlFor="confirmPassword">
-                            Confirm Password
-                        </label>
+                        <label htmlFor="confirmPassword">Confirm Password</label>
                         <input
                             id="confirmPassword"
                             name="confirmPassword"
@@ -75,20 +80,14 @@ function SignUp() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                         />
                     </div>
-                    <button
-                        type="submit"
-                    >
-                        Sign Up
-                    </button>
+                    <button type="submit">Sign Up</button>
                     <div>
-                        <p>
-                            Already have an account? <Link to="/login">Login</Link>
-                        </p>
+                        <p>Already have an account? <Link to="/login">Login</Link></p>
                     </div>
                 </form>
             </div>
         </>
-    )
+    );
 }
 
-export default SignUp
+export default SignUp;

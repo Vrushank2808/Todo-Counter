@@ -1,29 +1,41 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "./context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { loginSucess, loginFailure } from "../authSlice/auth";
 
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const dispatch = useDispatch();
+    const { error } = useSelector((state) => state.auth);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
 
         if (!email || !password) {
-            setError("All fields are required");
+            dispatch(loginFailure("All fields are required"));
             return;
         }
 
-        try {
-            await login(email, password);
-            navigate("/counter"); 
-        } catch (error) {
-            setError(error.message);
+        const savedUsers = JSON.parse(localStorage.getItem("users")) || [];
+        const user = savedUsers.find(
+            (u) => u.email === email && u.password === password
+        );
+
+        if (!user) {
+            dispatch(loginFailure("Invalid Credentials"));
+            return;
         }
+
+        const userWithoutPassword = {
+            id: user.id,
+            email: user.email,
+        };
+
+        dispatch(loginSucess(userWithoutPassword));
+        localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+        navigate("/counter");
     };
 
     return (
@@ -33,9 +45,7 @@ function Login() {
                 {error && <p>{error}</p>}
                 <form onSubmit={handleSubmit}>
                     <div>
-                        <label htmlFor="email">
-                            Email
-                        </label>
+                        <label htmlFor="email">Email</label>
                         <input
                             id="email"
                             name="email"
@@ -46,9 +56,7 @@ function Login() {
                         />
                     </div>
                     <div>
-                        <label htmlFor="password">
-                            Password
-                        </label>
+                        <label htmlFor="password">Password</label>
                         <input
                             id="password"
                             name="password"
@@ -58,15 +66,9 @@ function Login() {
                             onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
-                    <button
-                        type="submit"
-                    >
-                        Login
-                    </button>
+                    <button type="submit">Login</button>
                     <div>
-                        <p>
-                            Dont have an account? <Link to="/">Sign Up</Link>
-                        </p>
+                        <p>Don't have an account? <Link to="/signup">Sign Up</Link></p>
                     </div>
                 </form>
             </div>

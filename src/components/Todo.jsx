@@ -1,14 +1,14 @@
 import { useSelector, useDispatch } from "react-redux";
 import { addTodo, deleteTodo, toggleTodo } from "../todoSlice/todoSlice";
+import { logout } from "../authSlice/auth";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 
 function Todo() {
   const [newTodo, setNewTodo] = useState("");
   const todos = useSelector((state) => state.todos.todos);
-
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,6 +16,12 @@ function Todo() {
       dispatch(addTodo(newTodo.trim()));
       setNewTodo("");
     }
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   return (
@@ -55,9 +61,9 @@ function Todo() {
           ))}
         </ul>
         <div><Link to="/counter">Link to Counter-app</Link></div>
+        <button onClick={handleLogout}>Logout</button>
       </div>
     </div>
-
   );
 }
 
