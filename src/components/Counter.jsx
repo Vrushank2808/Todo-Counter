@@ -25,8 +25,8 @@ function Counter() {
       </div>
       <div>
         <Link to="/todo">Link to Todo-app</Link>
-      </div>
       <button onClick={handleLogout}>Logout</button>
+      </div>
     </>
   );
 }
